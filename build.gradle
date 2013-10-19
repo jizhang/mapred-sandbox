@@ -1,3 +1,14 @@
-task hello << {
-    println 'Hello, world!'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.6
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
 }
+
+dependencies {
+    compile 'org.apache.hadoop:hadoop-core:1.0.4'
+}
+
