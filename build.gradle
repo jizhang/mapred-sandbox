@@ -8,7 +8,16 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    compile 'org.apache.hadoop:hadoop-core:1.0.4'
+configurations {
+    provided
 }
 
+sourceSets {
+    main.compileClasspath += configurations.provided
+}
+
+dependencies {
+    provided 'org.apache.hadoop:hadoop-core:1.0.4'
+}
+
+eclipse.classpath.plusConfigurations += configurations.provided
