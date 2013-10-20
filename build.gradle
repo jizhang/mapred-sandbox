@@ -16,8 +16,13 @@ sourceSets {
     main.compileClasspath += configurations.provided
 }
 
+eclipse.classpath.plusConfigurations += configurations.provided
+
 dependencies {
     provided 'org.apache.hadoop:hadoop-core:1.0.4'
 }
 
-eclipse.classpath.plusConfigurations += configurations.provided
+task hadoop(type: Exec) {
+    dependsOn 'jar'
+    commandLine 'hadoop', 'jar', 'build/libs/mapred-sandbox-0.1.0.jar', 'com.shzhangji.mapred_sandbox.' + jobName
+}
