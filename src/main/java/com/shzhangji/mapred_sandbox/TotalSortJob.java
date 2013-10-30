@@ -7,12 +7,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -27,8 +29,10 @@ public class TotalSortJob extends Configured implements Tool {
 
         Path input = new Path("mapred-sandbox/data/total-sort/");
         Path output = new Path("mapred-sandbox/output/total-sort/");
+        Path partition = new Path(output.getParent(), "total-sort-partition");
 
-        FileSystem.get(getConf()).delete(output, true);
+        FileSystem fs = FileSystem.get(getConf());
+        fs.delete(output, true);
 
         Job job = new Job(getConf());
         job.setJarByClass(TotalSortJob.class);
@@ -41,9 +45,38 @@ public class TotalSortJob extends Configured implements Tool {
         job.setMapOutputValueClass(NullWritable.class);
 
         job.setReducerClass(JobReducer.class);
-        job.setNumReduceTasks(1);
+        job.setNumReduceTasks(3);
         job.setOutputKeyClass(NullWritable.class);
         job.setOutputValueClass(LongWritable.class);
+
+        job.setPartitionerClass(TotalOrderPartitioner.class);
+        TotalOrderPartitioner.setPartitionFile(job.getConfiguration(), partition);
+
+//        InputSampler.Sampler<LongWritable, NullWritable> sampler =
+//                new InputSampler.RandomSampler<LongWritable, NullWritable>(0.9, job.getNumReduceTasks());
+//        InputSampler.writePartitionFile(job, sampler);
+//
+//        for (FileStatus file : fs.listStatus(partition)) {
+//
+//            SequenceFile.Reader reader = new SequenceFile.Reader(fs, file.getPath(), getConf());
+//            LongWritable key = new LongWritable();
+//            NullWritable value = NullWritable.get();
+//            while (reader.next(key, value)) {
+//                System.out.println(key.get());
+//            }
+//            reader.close();
+//
+//        }
+
+        SequenceFile.Writer writer = new SequenceFile.Writer(fs, getConf(), partition,
+                LongWritable.class, NullWritable.class);
+        LongWritable key = new LongWritable();
+        NullWritable value = NullWritable.get();
+        key.set(4);
+        writer.append(key, value);
+        key.set(7);
+        writer.append(key, value);
+        writer.close();
 
         return job.waitForCompletion(true) ? 0 : 1;
     }
