@@ -1,7 +1,6 @@
 package com.shzhangji.mapred_sandbox;
 
 import java.io.IOException;
-import java.net.URI;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -35,7 +34,9 @@ public class DistributedCacheJob extends Configured implements Tool {
         job.setMapperClass(JobMapper.class);
         job.setNumReduceTasks(0);;
 
-        DistributedCache.addCacheFile(new URI("file:/home/jizhang/git/mapred-sandbox/README.md"), job.getConfiguration());
+        DistributedCache.addArchiveToClassPath(
+                new Path("/tmp/mysql-connector-java-5.1.26.jar"),
+                job.getConfiguration(), FileSystem.getLocal(getConf()));
 
         return job.waitForCompletion(true) ? 0 : 1;
     }
@@ -50,11 +51,11 @@ public class DistributedCacheJob extends Configured implements Tool {
         protected void setup(Context context)
                 throws IOException, InterruptedException {
 
-            Path[] files = DistributedCache.getLocalCacheFiles(context.getConfiguration());
-            for (Path file : files) {
-                System.out.println(file.toString());
+            try {
+                System.out.println(Class.forName("com.mysql.jdbc.Connection").toString());
+            } catch (ClassNotFoundException e) {
+                System.out.println(e.toString());
             }
-
         }
 
     }
