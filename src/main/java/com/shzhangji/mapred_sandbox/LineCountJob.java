@@ -21,7 +21,7 @@ public class LineCountJob extends Configured implements Tool {
     public int run(String[] args) throws Exception {
 
         Path input = new Path(args[0]);
-        Path output = new Path(args[1]);
+        Path output = new Path("/tmp/jizhang/line-count");
 
         Job job = new Job(getConf());
         job.setJarByClass(LineCountJob.class);
@@ -49,6 +49,7 @@ public class LineCountJob extends Configured implements Tool {
         protected void setup(Context context)
                 throws IOException, InterruptedException {
 
+            super.setup(context);
             count = 0;
         }
 
@@ -63,8 +64,8 @@ public class LineCountJob extends Configured implements Tool {
         protected void cleanup(Context context)
                 throws IOException, InterruptedException {
 
-            super.cleanup(context);
             context.write(NullWritable.get(), new LongWritable(count));
+            super.cleanup(context);
         }
 
     }
