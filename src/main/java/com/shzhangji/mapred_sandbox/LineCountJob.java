@@ -3,6 +3,7 @@ package com.shzhangji.mapred_sandbox;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -22,6 +23,8 @@ public class LineCountJob extends Configured implements Tool {
 
         Path input = new Path(args[0]);
         Path output = new Path("/tmp/jizhang/line-count");
+
+        FileSystem.get(getConf()).delete(output, true);
 
         Job job = new Job(getConf());
         job.setJarByClass(LineCountJob.class);
