@@ -27,8 +27,11 @@ public class LzoCompressorJob extends Configured implements Tool {
 
         FileInputFormat.setInputPaths(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
-        FileOutputFormat.setCompressOutput(job, true);
         FileOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
+
+        // set with conf
+        // FileOutputFormat.setCompressOutput(job, true);
+        // job.getConfiguration().set("mapred.output.compression.codec", "com.hadoop.compression.lzo.LzopCodec");
 
         job.setMapperClass(JobMapper.class);
         job.setMapOutputKeyClass(LongWritable.class);
