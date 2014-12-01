@@ -7,6 +7,9 @@ version = '0.1.0'
 repositories {
     mavenCentral()
     mavenLocal()
+    maven {
+        url 'http://maven.twttr.com/'
+    }
 }
 
 configurations {
@@ -14,10 +17,10 @@ configurations {
 }
 
 sourceSets {
-    main.compileClasspath += configurations.provided
+    main.compileClasspath += [configurations.provided]
 }
 
-eclipse.classpath.plusConfigurations += configurations.provided
+eclipse.classpath.plusConfigurations += [configurations.provided]
 
 dependencies {
     provided 'org.apache.hadoop:hadoop-core:1.0.4'
@@ -26,5 +29,5 @@ dependencies {
 
 task hadoop(type: Exec) {
     dependsOn 'jar'
-    commandLine 'hadoop', 'jar', 'build/libs/mapred-sandbox-0.1.0.jar', 'com.shzhangji.mapred_sandbox.' + jobName
+    commandLine 'hadoop', 'jar', 'build/libs/mapred-sandbox-0.1.0.jar', 'com.shzhangji.mapred_sandbox.' + (hasProperty('jobName') ? jobName : 'Default')
 }
