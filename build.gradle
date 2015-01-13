@@ -29,5 +29,5 @@ dependencies {
 
 task hadoop(type: Exec) {
     dependsOn 'jar'
-    commandLine 'hadoop', 'jar', 'build/libs/mapred-sandbox-0.1.0.jar', 'com.shzhangji.mapred_sandbox.' + (hasProperty('jobName') ? jobName : 'Default')
+    commandLine 'hadoop', 'jar', 'build/libs/mapred-sandbox-0.1.0.jar', 'com.shzhangji.mapred_sandbox.' + (project.hasProperty('jobName') ? jobName : 'Default')
 }
