@@ -15,8 +15,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import com.hadoop.compression.lzo.LzopCodec;
-
 public class LzoCompressorJob extends Configured implements Tool {
 
     @Override
@@ -27,11 +25,13 @@ public class LzoCompressorJob extends Configured implements Tool {
 
         FileInputFormat.setInputPaths(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
-        FileOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
+
+        // set with class
+        // FileOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
 
         // set with conf
-        // FileOutputFormat.setCompressOutput(job, true);
-        // job.getConfiguration().set("mapred.output.compression.codec", "com.hadoop.compression.lzo.LzopCodec");
+        FileOutputFormat.setCompressOutput(job, true);
+        job.getConfiguration().set("mapred.output.compression.codec", "com.hadoop.compression.lzo.LzopCodec");
 
         job.setMapperClass(JobMapper.class);
         job.setMapOutputKeyClass(LongWritable.class);

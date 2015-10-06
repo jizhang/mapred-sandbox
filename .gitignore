@@ -2,8 +2,4 @@
 .classpath
 .buildpath
 .settings
-
-.gradle
-build
-
-/bin
+target
