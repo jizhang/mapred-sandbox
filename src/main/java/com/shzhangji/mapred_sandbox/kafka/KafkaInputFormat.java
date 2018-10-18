@@ -2,7 +2,6 @@ package com.shzhangji.mapred_sandbox.kafka;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -10,7 +9,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -21,9 +20,12 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class KafkaInputFormat extends InputFormat<LongWritable, Text> {
+public class KafkaInputFormat extends InputFormat<NullWritable, Text> {
+
+  private static final Logger log = LoggerFactory.getLogger(KafkaInputFormat.class);
 
   String topic = "bi.ds_user_action_v3";
   Path basePath = new Path("/user/gsbot/kafka");
@@ -35,7 +37,11 @@ public class KafkaInputFormat extends InputFormat<LongWritable, Text> {
     List<InputSplit> splits = new ArrayList<>();
 
     Properties props = new Properties();
-    try(Consumer<String, String> consumer = new KafkaConsumer<>(props)) {
+    props.put("bootstrap.servers", "h1564:9092");
+    props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+    try (Consumer<String, String> consumer = new KafkaConsumer<>(props)) {
       List<PartitionInfo> partitions = consumer.partitionsFor(topic);
 
       for (PartitionInfo partition : partitions) {
@@ -52,51 +58,26 @@ public class KafkaInputFormat extends InputFormat<LongWritable, Text> {
       }
     }
 
+    log.info("num of splits {}", splits.size());
+
     return splits;
   }
 
   @Override
-  public RecordReader<LongWritable, Text> createRecordReader(InputSplit split,
+  public RecordReader<NullWritable, Text> createRecordReader(InputSplit split,
       TaskAttemptContext context) throws IOException, InterruptedException {
 
-
-
-    return null;
+    return new KafkaRecordReader();
   }
 
-  long getFromOffset(Consumer<String, String> consumer, int partition, Configuration conf) throws IOException {
+  private long getFromOffset(Consumer<String, String> consumer, int partition, Configuration conf) throws IOException {
     Path offsetPath = new Path(offsetsPath, topic + "-" + partition);
-    try(FileSystem fs = FileSystem.get(conf)) {
-      if (fs.exists(offsetPath)) {
-        try (FSDataInputStream in = fs.open(offsetPath)) {
-          return in.readLong() + 1;
-        }
-      }
-      return 0L;
-    }
-  }
-
-  OffsetRange getOffsetRange(Consumer<String, String> consumer, int partition, Configuration conf) throws IOException {
     FileSystem fs = FileSystem.get(conf);
-
-    TopicPartition topicPartition = new TopicPartition(topic, partition);
-
-    Path offsetPath = new Path(offsetsPath, topic + "-" + partition);
-
-    long fromOffset = 0;
     if (fs.exists(offsetPath)) {
       try (FSDataInputStream in = fs.open(offsetPath)) {
-        fromOffset = in.readLong() + 1;
+        return in.readLong() + 1;
       }
-    } else {
-      consumer.seekToBeginning(Arrays.asList(topicPartition));
-      fromOffset = consumer.position(topicPartition);
     }
-
-    consumer.seekToEnd(Arrays.asList(topicPartition));
-    long untilOffset = consumer.position(topicPartition) + 1;
-
-    return new OffsetRange(fromOffset, untilOffset);
+    return 0;
   }
-
 }

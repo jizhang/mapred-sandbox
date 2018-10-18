@@ -5,31 +5,44 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class KafkaRecordReader extends RecordReader<Text, Text> {
+public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
 
-  long pollTimeout = 30 * 1000; // 30s
+  private static final Logger log = LoggerFactory.getLogger(KafkaRecordReader.class);
 
+  long pollTimeout = 10_000;
+
+  private JobContext job;
   private Consumer<String, String> consumer;
   private TopicPartition topicPartition;
   private long fromOffset;
   private long nextOffset;
   private long untilOffset;
   private Iterator<ConsumerRecord<String, String>> recordIterator;
-  private Text key = new Text();
+  private NullWritable key = NullWritable.get();
   private Text value = new Text();
 
   @Override
   public void initialize(InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
+
+    job = context;
 
     KafkaInputSplit kafkaSplit = (KafkaInputSplit) split;
     topicPartition = new TopicPartition(kafkaSplit.getTopic(), kafkaSplit.getPartition());
@@ -37,11 +50,22 @@ public class KafkaRecordReader extends RecordReader<Text, Text> {
     nextOffset = fromOffset;
 
     Properties props = new Properties();
+    props.put("bootstrap.servers", "h1564:9092");
+    props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    props.put("enable.auto.commit", "false");
+
     consumer = new KafkaConsumer<>(props);
     consumer.assign(Arrays.asList(topicPartition));
 
     consumer.seekToEnd(Arrays.asList(topicPartition));
     untilOffset = consumer.position(topicPartition) + 1;
+
+    if (untilOffset - fromOffset > 10000) {
+      untilOffset = fromOffset + 10000;
+    }
+
+    log.info("fromOffset={} untilOffset={}", fromOffset, untilOffset);
   }
 
   @Override
@@ -50,7 +74,7 @@ public class KafkaRecordReader extends RecordReader<Text, Text> {
       return false;
     }
 
-    if (recordIterator == null) {
+    if (recordIterator == null || !recordIterator.hasNext()) {
       consumer.seek(topicPartition, nextOffset);
       recordIterator = consumer.poll(pollTimeout).iterator();
     }
@@ -61,19 +85,17 @@ public class KafkaRecordReader extends RecordReader<Text, Text> {
     }
 
     ConsumerRecord<String, String> record = recordIterator.next();
-    nextOffset = record.offset() + 1;
-    key.set(record.key());
-    value.set(record.value());
-
-    if (!recordIterator.hasNext()) {
-      recordIterator = null;
+    if (record.offset() >= untilOffset) {
+      return false;
     }
 
+    nextOffset = record.offset() + 1;
+    value.set(record.value());
     return true;
   }
 
   @Override
-  public Text getCurrentKey() throws IOException, InterruptedException {
+  public NullWritable getCurrentKey() throws IOException, InterruptedException {
     return key;
   }
 
@@ -90,6 +112,12 @@ public class KafkaRecordReader extends RecordReader<Text, Text> {
   @Override
   public void close() throws IOException {
     consumer.close();
-  }
 
+    Path outputPath = FileOutputFormat.getOutputPath(job);
+    Path offsetPath = new Path(outputPath, "_offsets/" + topicPartition.topic() + "-" + topicPartition.partition());
+    FileSystem fs = FileSystem.get(job.getConfiguration());
+    try (FSDataOutputStream out = fs.create(offsetPath, true)) {
+      out.writeLong(untilOffset);
+    }
+  }
 }
