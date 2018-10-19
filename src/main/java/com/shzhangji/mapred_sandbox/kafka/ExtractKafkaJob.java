@@ -18,9 +18,13 @@ public class ExtractKafkaJob extends Configured implements Tool {
     public int run(String[] args) throws Exception {
         Configuration conf = getConf();
         conf.setBoolean("mapreduce.map.speculative", false);
+        conf.setBoolean("mapreduce.output.fileoutputformat.compress", true);
+        conf.set("mapreduce.output.fileoutputformat.compress.codec", "com.hadoop.compression.lzo.LzopCodec");
+
+        FileSystem fs = FileSystem.get(conf);
 
         Path output = new Path("/tmp/jizhang/mapred-sandbox/output/extract-kafka");
-        FileSystem.get(getConf()).delete(output, true);
+        fs.delete(output, true);
 
         Job job = Job.getInstance(conf);
         job.setJarByClass(ExtractKafkaJob.class);

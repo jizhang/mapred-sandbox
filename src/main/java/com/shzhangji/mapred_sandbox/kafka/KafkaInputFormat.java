@@ -18,15 +18,9 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class KafkaInputFormat extends InputFormat<NullWritable, Text> {
-
-  private static final Logger log = LoggerFactory.getLogger(KafkaInputFormat.class);
-
   String topic = "bi.ds_user_action_v3";
   Path basePath = new Path("/user/gsbot/kafka");
   Path offsetsPath = new Path(basePath, "_offsets");
@@ -46,19 +40,10 @@ public class KafkaInputFormat extends InputFormat<NullWritable, Text> {
 
       for (PartitionInfo partition : partitions) {
         long fromOffset = getFromOffset(consumer, partition.partition(), context.getConfiguration());
-
-        List<String> hostList = new ArrayList<>();
-        for (Node node : partition.inSyncReplicas()) {
-          hostList.add(node.host());
-        }
-        String[] hosts = hostList.toArray(new String[0]);
-
-        InputSplit split = new KafkaInputSplit(topic, partition.partition(), fromOffset, hosts);
+        InputSplit split = new KafkaInputSplit(topic, partition.partition(), fromOffset, partition.leader().host());
         splits.add(split);
       }
     }
-
-    log.info("num of splits {}", splits.size());
 
     return splits;
   }
@@ -75,7 +60,7 @@ public class KafkaInputFormat extends InputFormat<NullWritable, Text> {
     FileSystem fs = FileSystem.get(conf);
     if (fs.exists(offsetPath)) {
       try (FSDataInputStream in = fs.open(offsetPath)) {
-        return in.readLong() + 1;
+        return Long.valueOf(in.readUTF()) + 1;
       }
     }
     return 0;

@@ -61,10 +61,6 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
     consumer.seekToEnd(Arrays.asList(topicPartition));
     untilOffset = consumer.position(topicPartition) + 1;
 
-    if (untilOffset - fromOffset > 10000) {
-      untilOffset = fromOffset + 10000;
-    }
-
     log.info("fromOffset={} untilOffset={}", fromOffset, untilOffset);
   }
 
@@ -117,7 +113,7 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
     Path offsetPath = new Path(outputPath, "_offsets/" + topicPartition.topic() + "-" + topicPartition.partition());
     FileSystem fs = FileSystem.get(job.getConfiguration());
     try (FSDataOutputStream out = fs.create(offsetPath, true)) {
-      out.writeLong(untilOffset);
+      out.writeUTF(String.valueOf(untilOffset));
     }
   }
 }

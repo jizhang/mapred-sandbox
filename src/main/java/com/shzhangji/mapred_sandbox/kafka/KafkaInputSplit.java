@@ -3,8 +3,6 @@ package com.shzhangji.mapred_sandbox.kafka;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -14,15 +12,15 @@ public class KafkaInputSplit extends InputSplit implements Writable {
   private String topic;
   private int partition;
   private long fromOffset;
-  private String[] hosts;
+  private String host;
 
   public KafkaInputSplit() {}
 
-  public KafkaInputSplit(String topic, int partition, long fromOffset, String[] hosts) {
+  public KafkaInputSplit(String topic, int partition, long fromOffset, String host) {
     this.topic = topic;
     this.partition = partition;
     this.fromOffset = fromOffset;
-    this.hosts = hosts;
+    this.host = host;
   }
 
   @Override
@@ -32,7 +30,7 @@ public class KafkaInputSplit extends InputSplit implements Writable {
 
   @Override
   public String[] getLocations() throws IOException, InterruptedException {
-    return hosts;
+    return new String[] { host };
   }
 
   public String getTopic() {
@@ -52,11 +50,7 @@ public class KafkaInputSplit extends InputSplit implements Writable {
     out.writeUTF(topic);
     out.writeInt(partition);
     out.writeLong(fromOffset);
-
-    out.writeInt(hosts.length);
-    for (String host : hosts) {
-      out.writeUTF(host);
-    }
+    out.writeUTF(host);
   }
 
   @Override
@@ -64,13 +58,7 @@ public class KafkaInputSplit extends InputSplit implements Writable {
     topic = in.readUTF();
     partition = in.readInt();
     fromOffset = in.readLong();
-
-    int numHosts = in.readInt();
-    List<String> hostList = new ArrayList<>();
-    for (int i = 0; i < numHosts; ++i) {
-      hostList.add(in.readUTF());
-    }
-    hosts = hostList.toArray(new String[0]);
+    host = in.readUTF();
   }
 
 }
