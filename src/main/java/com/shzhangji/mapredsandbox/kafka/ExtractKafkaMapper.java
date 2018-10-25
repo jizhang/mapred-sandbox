@@ -42,7 +42,8 @@ public class ExtractKafkaMapper extends Mapper<NullWritable, Text, NullWritable,
       return;
     }
 
-    String baseOutputPath = String.format("dt=%s/%s-%d-%d", partitionValue,
+    String baseOutputPath = String.format("%s=%s/%s-%d-%d",
+        ExtractKafkaJob.PARTITION_COLUMN, partitionValue,
         split.getTopic(), split.getPartition(), split.getFromOffset());
     mos.write(key, value, baseOutputPath);
   }
@@ -56,7 +57,7 @@ public class ExtractKafkaMapper extends Mapper<NullWritable, Text, NullWritable,
 
   private String getPartitionValue(String value) throws IOException {
     JsonNode node = objectMapper.readTree(value);
-    long timestamp = node.path("timestamp").getLongValue();
+    long timestamp = node.path(ExtractKafkaJob.TIMESTAMP_KEY).getLongValue();
     Date date = new Date(timestamp * 1000);
     DateFormat df = new SimpleDateFormat("yyyyMMdd");
     String partitionValue = df.format(date);

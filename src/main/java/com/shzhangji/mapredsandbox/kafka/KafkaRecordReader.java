@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,7 +27,7 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
 
   private static final Logger log = LoggerFactory.getLogger(KafkaRecordReader.class);
 
-  long pollTimeout = 10_000;
+  private long pollTimeout = 10_000;
 
   private JobContext job;
   private Consumer<String, String> consumer;
@@ -49,8 +50,9 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
     fromOffset = kafkaSplit.getFromOffset();
     nextOffset = fromOffset;
 
+    Configuration conf = job.getConfiguration();
     Properties props = new Properties();
-    props.put("bootstrap.servers", "h1564:9092");
+    props.put("bootstrap.servers", conf.get(ExtractKafkaJob.CONFIG_BROKERS));
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     props.put("enable.auto.commit", "false");
@@ -110,7 +112,8 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
     consumer.close();
 
     Path outputPath = FileOutputFormat.getOutputPath(job);
-    Path offsetPath = new Path(outputPath, "_offsets/" + topicPartition.topic() + "-" + topicPartition.partition());
+    Path offsetPath = new Path(outputPath, String.format("%s/%s-%s",
+        ExtractKafkaJob.OFFSETS_PREFIX, topicPartition.topic(), topicPartition.partition()));
     FileSystem fs = FileSystem.get(job.getConfiguration());
     try (FSDataOutputStream out = fs.create(offsetPath, true)) {
       out.writeUTF(String.valueOf(untilOffset));
