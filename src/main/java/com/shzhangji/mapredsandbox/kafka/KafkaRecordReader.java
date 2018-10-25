@@ -52,7 +52,7 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
 
     Configuration conf = job.getConfiguration();
     Properties props = new Properties();
-    props.put("bootstrap.servers", conf.get(ExtractKafkaJob.CONFIG_BROKERS));
+    props.put("bootstrap.servers", conf.get(KafkaLoader.CONFIG_BROKERS));
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     props.put("enable.auto.commit", "false");
@@ -113,7 +113,7 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
 
     Path outputPath = FileOutputFormat.getOutputPath(job);
     Path offsetPath = new Path(outputPath, String.format("%s/%s-%s",
-        ExtractKafkaJob.OFFSETS_PREFIX, topicPartition.topic(), topicPartition.partition()));
+        KafkaLoader.OFFSETS_PREFIX, topicPartition.topic(), topicPartition.partition()));
     FileSystem fs = FileSystem.get(job.getConfiguration());
     try (FSDataOutputStream out = fs.create(offsetPath, true)) {
       out.writeUTF(String.valueOf(untilOffset));

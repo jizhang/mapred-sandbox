@@ -18,8 +18,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 import com.sun.jersey.core.impl.provider.entity.XMLJAXBElementProvider.Text;
 
-public class ExtractKafkaJob extends Configured implements Tool {
-  private static final Logger log = LoggerFactory.getLogger(ExtractKafkaJob.class);
+public class KafkaLoader extends Configured implements Tool {
+  private static final Logger log = LoggerFactory.getLogger(KafkaLoader.class);
 
   public static final String CONFIG_TABLE_NAME = "kafka.loader.tableName";
   public static final String CONFIG_BASE_PATH = "kafka.loader.basePath";
@@ -54,12 +54,12 @@ public class ExtractKafkaJob extends Configured implements Tool {
     log.info("output path {}", outputPath);
 
     Job job = Job.getInstance(conf);
-    job.setJarByClass(ExtractKafkaJob.class);
+    job.setJarByClass(KafkaLoader.class);
 
     job.setInputFormatClass(KafkaInputFormat.class);
     FileOutputFormat.setOutputPath(job, outputPath);
 
-    job.setMapperClass(ExtractKafkaMapper.class);
+    job.setMapperClass(KafkaLoaderMapper.class);
     job.setNumReduceTasks(0);
 
     job.setOutputKeyClass(NullWritable.class);
@@ -127,6 +127,6 @@ public class ExtractKafkaJob extends Configured implements Tool {
   }
 
   public static void main(String[] args) throws Exception {
-    System.exit(ToolRunner.run(new ExtractKafkaJob(), args));
+    System.exit(ToolRunner.run(new KafkaLoader(), args));
   }
 }

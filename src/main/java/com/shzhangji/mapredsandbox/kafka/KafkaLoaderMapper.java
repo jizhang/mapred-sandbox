@@ -14,8 +14,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExtractKafkaMapper extends Mapper<NullWritable, Text, NullWritable, Text>  {
-  private static final Logger log = LoggerFactory.getLogger(ExtractKafkaMapper.class);
+public class KafkaLoaderMapper extends Mapper<NullWritable, Text, NullWritable, Text>  {
+  private static final Logger log = LoggerFactory.getLogger(KafkaLoaderMapper.class);
 
   private MultipleOutputs<NullWritable, Text> mos;
   private ObjectMapper objectMapper = new ObjectMapper();
@@ -43,7 +43,7 @@ public class ExtractKafkaMapper extends Mapper<NullWritable, Text, NullWritable,
     }
 
     String baseOutputPath = String.format("%s=%s/%s-%d-%d",
-        ExtractKafkaJob.PARTITION_COLUMN, partitionValue,
+        KafkaLoader.PARTITION_COLUMN, partitionValue,
         split.getTopic(), split.getPartition(), split.getFromOffset());
     mos.write(key, value, baseOutputPath);
   }
@@ -57,7 +57,7 @@ public class ExtractKafkaMapper extends Mapper<NullWritable, Text, NullWritable,
 
   private String getPartitionValue(String value) throws IOException {
     JsonNode node = objectMapper.readTree(value);
-    long timestamp = node.path(ExtractKafkaJob.TIMESTAMP_KEY).getLongValue();
+    long timestamp = node.path(KafkaLoader.TIMESTAMP_KEY).getLongValue();
     Date date = new Date(timestamp * 1000);
     DateFormat df = new SimpleDateFormat("yyyyMMdd");
     String partitionValue = df.format(date);

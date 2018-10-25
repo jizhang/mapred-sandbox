@@ -27,12 +27,12 @@ public class KafkaInputFormat extends InputFormat<NullWritable, Text> {
 
     Configuration conf = context.getConfiguration();
     Properties props = new Properties();
-    props.put("bootstrap.servers", conf.get(ExtractKafkaJob.CONFIG_BROKERS));
+    props.put("bootstrap.servers", conf.get(KafkaLoader.CONFIG_BROKERS));
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
     try (Consumer<String, String> consumer = new KafkaConsumer<>(props)) {
-      List<PartitionInfo> partitions = consumer.partitionsFor(conf.get(ExtractKafkaJob.CONFIG_TOPIC));
+      List<PartitionInfo> partitions = consumer.partitionsFor(conf.get(KafkaLoader.CONFIG_TOPIC));
 
       for (PartitionInfo partition : partitions) {
         long fromOffset = getFromOffset(consumer, partition.topic(), partition.partition(), conf);
@@ -54,7 +54,7 @@ public class KafkaInputFormat extends InputFormat<NullWritable, Text> {
   private long getFromOffset(Consumer<String, String> consumer, String topic, int partition,
       Configuration conf) throws IOException {
 
-    Path offsetsPath = new Path(conf.get(ExtractKafkaJob.CONFIG_BASE_PATH), ExtractKafkaJob.OFFSETS_PREFIX);
+    Path offsetsPath = new Path(conf.get(KafkaLoader.CONFIG_BASE_PATH), KafkaLoader.OFFSETS_PREFIX);
     Path offsetPath = new Path(offsetsPath, topic + "-" + partition);
     FileSystem fs = FileSystem.get(conf);
     if (fs.exists(offsetPath)) {
