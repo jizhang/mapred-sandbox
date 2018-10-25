@@ -61,7 +61,7 @@ public class KafkaRecordReader extends RecordReader<NullWritable, Text> {
     consumer.assign(Arrays.asList(topicPartition));
 
     consumer.seekToEnd(Arrays.asList(topicPartition));
-    untilOffset = consumer.position(topicPartition) + 1;
+    untilOffset = consumer.position(topicPartition);
 
     log.info("fromOffset={} untilOffset={}", fromOffset, untilOffset);
   }

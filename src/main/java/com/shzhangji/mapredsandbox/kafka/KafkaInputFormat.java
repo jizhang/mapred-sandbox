@@ -59,7 +59,7 @@ public class KafkaInputFormat extends InputFormat<NullWritable, Text> {
     FileSystem fs = FileSystem.get(conf);
     if (fs.exists(offsetPath)) {
       try (FSDataInputStream in = fs.open(offsetPath)) {
-        return Long.valueOf(in.readUTF()) + 1;
+        return Long.valueOf(in.readUTF());
       }
     }
     return 0;

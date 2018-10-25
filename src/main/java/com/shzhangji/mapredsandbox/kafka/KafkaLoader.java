@@ -36,11 +36,11 @@ public class KafkaLoader extends Configured implements Tool {
     Configuration conf = getConf();
 
     // check params
-    Preconditions.checkNotNull(conf.get(CONFIG_TABLE_NAME));
-    Preconditions.checkNotNull(conf.get(CONFIG_BASE_PATH));
-    Preconditions.checkNotNull(conf.get(CONFIG_OUTPUT_PATH));
-    Preconditions.checkNotNull(conf.get(CONFIG_TOPIC));
-    Preconditions.checkNotNull(conf.get(CONFIG_BROKERS));
+    Preconditions.checkNotNull(conf.get(CONFIG_TABLE_NAME), CONFIG_TABLE_NAME);
+    Preconditions.checkNotNull(conf.get(CONFIG_BASE_PATH), CONFIG_BASE_PATH);
+    Preconditions.checkNotNull(conf.get(CONFIG_OUTPUT_PATH), CONFIG_OUTPUT_PATH);
+    Preconditions.checkNotNull(conf.get(CONFIG_TOPIC), CONFIG_TOPIC);
+    Preconditions.checkNotNull(conf.get(CONFIG_BROKERS), CONFIG_BROKERS);
 
     // set configs
     conf.setBoolean("mapreduce.map.speculative", false);
